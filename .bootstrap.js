@@ -80,7 +80,8 @@ function runSetupCommands() {
     const commands = [
     "bun add chart.js@^4.4.3",
     "bun add react-chartjs-2@^5.2.0",
-    "bun add react-confetti@^6.1.0"
+    "bun add react-confetti@^6.1.0",
+    "bun install chart.js react-chartjs-2 react-confetti"
 ];
     
     if (commands.length === 0) {
