@@ -2,14 +2,13 @@ import { DurableObject } from 'cloudflare:workers';
 import type { SessionInfo } from './types';
 import type { Env } from './core-utils';
 import { generateOptimalDraw } from './spugna';
-interface DurableObjectState {
-  id?: string | number;
-
-  [key: string]: unknown;
-}export interface SpugnaState {optimalDraw: Record<string, string[]> | null;playersWhoPlayed: Record<string, boolean>;isInitialDrawDone: boolean;
+import type { DurableObjectState } from 'cloudflare:workers';
+export interface SpugnaState {
+  optimalDraw: Record<string, string[]> | null;
+  playersWhoPlayed: Record<string, boolean>;
+  isInitialDrawDone: boolean;
   timestamp: number | null;
 }
-
 export class AppController extends DurableObject<Env> {
   private sessions = new Map<string, SessionInfo>();
   private spugnaState: SpugnaState | null = null;
@@ -35,7 +34,6 @@ export class AppController extends DurableObject<Env> {
     await this.ctx.storage.put('sessions', Object.fromEntries(this.sessions));
     await this.ctx.storage.put('spugnaState', this.spugnaState);
   }
-
   async getSpugnaState(): Promise<SpugnaState | null> {
     await this.ensureLoaded();
     return this.spugnaState;
@@ -72,7 +70,6 @@ export class AppController extends DurableObject<Env> {
     await this.persist();
     return this.spugnaState;
   }
-
   async addSession(sessionId: string, title?: string): Promise<void> {
     await this.ensureLoaded();
     const now = Date.now();

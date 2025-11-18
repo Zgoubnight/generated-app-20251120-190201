@@ -4,6 +4,7 @@ import { ChatAgent } from './agent';
 import { API_RESPONSES } from './config';
 import { Env, getAppController, registerSession, unregisterSession } from "./core-utils";
 import { MEMBERS } from "./spugna";
+import { ChatHandler } from "./chat";
 /**
  * DO NOT MODIFY THIS FUNCTION. Only for your reference.
  */
@@ -31,6 +32,26 @@ export function coreRoutes(app: Hono<{ Bindings: Env }>) {
 }
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
     // --- La Roue SPUGNA API Routes ---
+    app.post('/api/spugna/generate-ideas', async (c) => {
+        try {
+            const { recipients } = await c.req.json<{ recipients: string[] }>();
+            if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+                return c.json({ success: false, error: 'Recipients are required' }, { status: 400 });
+            }
+            const recipientDetails = recipients.map(name => {
+                const member = MEMBERS.find(m => m.name === name);
+                return member ? `${name} (${member.role === 'Child/Recipient' ? 'enfant' : 'adulte'})` : name;
+            }).join(', ');
+            const prompt = `Pour une fête de Noël en famille, génère 2 idées de cadeaux originales et personnalisées pour chacune des personnes suivantes : ${recipientDetails}. Formatte la réponse en Markdown, avec le nom de chaque personne comme un titre de niveau 2 (## Nom) et les idées de cadeaux comme une liste à puces.`;
+            // We can instantiate ChatHandler directly for one-off tasks
+            const chatHandler = new ChatHandler(c.env.CF_AI_BASE_URL, c.env.CF_AI_API_KEY, 'google-ai-studio/gemini-2.5-flash');
+            const ideas = await chatHandler.generateSingleResponse(prompt);
+            return c.json({ success: true, data: { ideas } });
+        } catch (error) {
+            console.error('Failed to generate gift ideas:', error);
+            return c.json({ success: false, error: 'Failed to generate gift ideas' }, { status: 500 });
+        }
+    });
     // GET /api/spugna/state - Get the current state of the game
     app.get('/api/spugna/state', async (c) => {
         try {

@@ -1,59 +1,34 @@
-
-
-
-
 import type { AppController } from './app-controller';
-import type { ChatAgent } from './agent';interface DurableObjectStub {id?: string | number;
-
-  [key: string]: unknown;
-}interface DurableObjectNamespace {id?: string | number;[key: string]: unknown;}interface DurableObjectNamespace {id?: string | number;[key: string]: unknown;}export interface Env {CF_AI_BASE_URL: string;CF_AI_API_KEY: string;
+import type { ChatAgent } from './agent';
+import type { DurableObjectNamespace, DurableObjectStub } from 'cloudflare:workers';
+export interface Env {
+  CF_AI_BASE_URL: string;
+  CF_AI_API_KEY: string;
   SERPAPI_KEY: string;
   OPENROUTER_API_KEY: string;
   CHAT_AGENT: DurableObjectNamespace<ChatAgent>;
   APP_CONTROLLER: DurableObjectNamespace<AppController>;
 }
-
-
-
-
-
 export function getAppController(env: Env): DurableObjectStub<AppController> {
   const id = env.APP_CONTROLLER.idFromName("controller");
   return env.APP_CONTROLLER.get(id);
 }
-
-
-
-
-
 export async function registerSession(env: Env, sessionId: string, title?: string): Promise<void> {
   try {
     const controller = getAppController(env);
     await controller.addSession(sessionId, title);
   } catch (error) {
     console.error('Failed to register session:', error);
-
   }
 }
-
-
-
-
-
 export async function updateSessionActivity(env: Env, sessionId: string): Promise<void> {
   try {
     const controller = getAppController(env);
     await controller.updateSessionActivity(sessionId);
   } catch (error) {
     console.error('Failed to update session activity:', error);
-
   }
 }
-
-
-
-
-
 export async function unregisterSession(env: Env, sessionId: string): Promise<boolean> {
   try {
     const controller = getAppController(env);

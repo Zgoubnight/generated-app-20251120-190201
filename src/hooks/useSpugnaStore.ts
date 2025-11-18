@@ -9,6 +9,8 @@ type SpugnaState = {
   currentView: SpugnaView;
   gameState: GameState | null;
   isLoading: boolean;
+  isGeneratingIdeas: boolean;
+  aiGiftIdeas: string | null;
 };
 type SpugnaActions = {
   fetchGameState: () => Promise<void>;
@@ -19,12 +21,16 @@ type SpugnaActions = {
   backToWheel: () => void;
   performInitialDraw: () => Promise<void>;
   resetGlobalDraw: () => Promise<void>;
+  generateGiftIdeas: (recipients: string[]) => Promise<void>;
+  clearGiftIdeas: () => void;
 };
 export const useSpugnaStore = create<SpugnaState & SpugnaActions>((set, get) => ({
   currentUser: null,
   currentView: 'login',
   gameState: null,
   isLoading: true,
+  isGeneratingIdeas: false,
+  aiGiftIdeas: null,
   fetchGameState: async () => {
     set({ isLoading: true });
     try {
@@ -52,6 +58,7 @@ export const useSpugnaStore = create<SpugnaState & SpugnaActions>((set, get) => 
     set({
       currentUser: null,
       currentView: 'login',
+      aiGiftIdeas: null,
     });
   },
   spinWheel: async () => {
@@ -99,9 +106,10 @@ export const useSpugnaStore = create<SpugnaState & SpugnaActions>((set, get) => 
         gameState: data,
         isLoading: false,
         currentView: state.currentUser ? 'wheel' : 'login',
+        aiGiftIdeas: null,
       }));
       toast.warning("Réinitialisation Globale!", {
-        description: "Tous les tirages ont été annulés. Le jeu est réinitialisé.",
+        description: "Tous les tirages ont ét�� annulés. Le jeu est réinitialisé.",
       });
     } catch (error) {
       console.error(error);
@@ -109,4 +117,22 @@ export const useSpugnaStore = create<SpugnaState & SpugnaActions>((set, get) => 
       set({ isLoading: false });
     }
   },
+  generateGiftIdeas: async (recipients: string[]) => {
+    set({ isGeneratingIdeas: true });
+    try {
+      const response = await fetch('/api/spugna/generate-ideas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipients }),
+      });
+      if (!response.ok) throw new Error('Failed to generate ideas');
+      const { data } = await response.json();
+      set({ aiGiftIdeas: data.ideas, isGeneratingIdeas: false });
+    } catch (error) {
+      console.error(error);
+      toast.error("Erreur de l'IA", { description: "Impossible de générer des id��es cadeaux pour le moment." });
+      set({ isGeneratingIdeas: false });
+    }
+  },
+  clearGiftIdeas: () => set({ aiGiftIdeas: null }),
 }));
