@@ -10,8 +10,10 @@ import {
   Legend,
 } from 'chart.js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MOCK_EQUITY_DATA } from './constants';
+import { MEMBERS } from './constants';
 import { BarChart } from 'lucide-react';
+import { useSpugnaStore } from '@/hooks/useSpugnaStore';
+import { useMemo } from 'react';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -21,6 +23,34 @@ ChartJS.register(
   Legend
 );
 export function EquityChartView() {
+  const optimalDraw = useSpugnaStore(s => s.gameState?.optimalDraw);
+  const chartData = useMemo(() => {
+    const recipientCounts: Record<string, number> = {};
+    MEMBERS.forEach(m => { recipientCounts[m.name] = 0; });
+    if (optimalDraw) {
+      Object.values(optimalDraw).flat().forEach(recipientName => {
+        if (recipientCounts[recipientName] !== undefined) {
+          recipientCounts[recipientName]++;
+        }
+      });
+    }
+    return {
+      labels: MEMBERS.map(m => m.name),
+      datasets: [
+        {
+          label: '# of Gifts Received',
+          data: MEMBERS.map(m => recipientCounts[m.name]),
+          backgroundColor: [
+            '#D62828', '#F77F00', '#FCBF49', '#003049',
+            '#D62828', '#F77F00', '#FCBF49', '#003049',
+            '#D62828', '#F77F00', '#FCBF49'
+          ],
+          borderColor: MEMBERS.map(() => '#EAE2B7'),
+          borderWidth: 1,
+        },
+      ],
+    };
+  }, [optimalDraw]);
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -70,7 +100,13 @@ export function EquityChartView() {
         </CardHeader>
         <CardContent>
           <div className="h-96 md:h-[500px] p-4">
-            <Bar options={options} data={MOCK_EQUITY_DATA} />
+            {optimalDraw ? (
+              <Bar options={options} data={chartData} />
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                Le tirage n'a pas encore été effectué.
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

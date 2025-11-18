@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSpugnaStore } from '@/hooks/useSpugnaStore';
-import { Gift, Sparkles, User } from 'lucide-react';
+import { Sparkles, User } from 'lucide-react';
 import ReactConfetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import { useState, useEffect } from 'react';
@@ -21,14 +21,15 @@ const itemVariants = {
     y: 0,
     opacity: 1,
     transition: {
-      type: 'spring',
+      type: 'spring' as const, // Fix: Add 'as const' to satisfy Framer Motion's type signature
       stiffness: 100,
     },
   },
 };
 export function ResultsView() {
   const currentUser = useSpugnaStore(s => s.currentUser);
-  const userResults = useSpugnaStore(s => s.userResults);
+  const optimalDraw = useSpugnaStore(s => s.gameState?.optimalDraw);
+  const userResults = currentUser && optimalDraw ? optimalDraw[currentUser.id] || [] : [];
   const { width, height } = useWindowSize();
   const [showConfetti, setShowConfetti] = useState(true);
   useEffect(() => {
@@ -49,7 +50,7 @@ export function ResultsView() {
           Voici tes missions, {currentUser?.name}!
         </h1>
         <p className="text-xl text-muted-foreground mb-10">
-          Tu offres un cadeau à...
+          Tu offres un cadeau ��...
         </p>
       </motion.div>
       <motion.div

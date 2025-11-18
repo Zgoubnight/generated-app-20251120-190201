@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { useSpugnaStore } from '@/hooks/useSpugnaStore';
 import { Gift, RotateCw } from 'lucide-react';
 export function WheelView() {
   const spinWheel = useSpugnaStore(s => s.spinWheel);
-  const isInitialDrawDone = useSpugnaStore(s => s.isInitialDrawDone);
+  const isInitialDrawDone = useSpugnaStore(s => s.gameState?.isInitialDrawDone);
   const currentUser = useSpugnaStore(s => s.currentUser);
   return (
     <motion.div
@@ -18,7 +18,7 @@ export function WheelView() {
         Bonjour, {currentUser?.name}!
       </h1>
       <p className="text-xl text-muted-foreground mb-8">
-        Prêt(e) à d��couvrir tes missions cadeaux ?
+        Prêt(e) à découvrir tes missions cadeaux ?
       </p>
       <Card className="relative w-80 h-80 md:w-96 md:h-96 mx-auto rounded-full flex items-center justify-center bg-gradient-to-br from-spugna-gold to-spugna-orange shadow-2xl border-8 border-spugna-dark-blue overflow-hidden">
         <motion.div

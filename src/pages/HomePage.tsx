@@ -1,7 +1,8 @@
+import { useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Toaster } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
-import { Home, BarChart2, LogOut } from 'lucide-react';
+import { Home, BarChart2, LogOut, Loader } from 'lucide-react';
 import { useSpugnaStore } from '@/hooks/useSpugnaStore';
 import { LoginView } from '@/components/spugna/LoginView';
 import { WheelView } from '@/components/spugna/WheelView';
@@ -11,10 +12,23 @@ import { AdminPanel } from '@/components/spugna/AdminPanel';
 export function HomePage() {
   const currentView = useSpugnaStore(s => s.currentView);
   const currentUser = useSpugnaStore(s => s.currentUser);
+  const isLoading = useSpugnaStore(s => s.isLoading);
+  const fetchGameState = useSpugnaStore(s => s.fetchGameState);
   const logout = useSpugnaStore(s => s.logout);
   const showChart = useSpugnaStore(s => s.showChart);
   const backToWheel = useSpugnaStore(s => s.backToWheel);
+  useEffect(() => {
+    fetchGameState();
+  }, [fetchGameState]);
   const renderView = () => {
+    if (isLoading && !currentUser) {
+      return (
+        <div className="flex flex-col items-center gap-4 text-spugna-dark-blue">
+          <Loader className="w-12 h-12 animate-spin" />
+          <p className="font-semibold">Chargement du jeu...</p>
+        </div>
+      );
+    }
     switch (currentView) {
       case 'login':
         return <LoginView />;
@@ -53,7 +67,7 @@ export function HomePage() {
       )}
       {currentUser?.isAdmin && <AdminPanel />}
       <footer className="absolute bottom-2 right-4 text-xs text-spugna-dark-blue/50">
-        Built with ❤️ at Cloudflare
+        Built with ��️ at Cloudflare
       </footer>
       <Toaster richColors position="top-center" />
     </div>
