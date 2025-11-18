@@ -1,5 +1,5 @@
 {
-  "name": "la-roue-spugna-_vqb0ygowhxql9bjsn0jd",
+  "name": "vite-cfagents-runner",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,8 +9,7 @@
     "lint": "eslint --cache -f json --quiet .",
     "preview": "bun run build && vite preview --host 0.0.0.0 --port ${PORT:-4173}",
     "deploy": "bun run build && wrangler deploy",
-    "cf-typegen": "wrangler types",
-    "prepare": "bun .bootstrap.js || true"
+    "cf-typegen": "wrangler types"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20250807.0",
@@ -51,6 +50,7 @@
     "@typescript-eslint/eslint-plugin": "^8.38.0",
     "@typescript-eslint/parser": "^8.38.0",
     "agents": "^0.0.109",
+    "chart.js": "^4.4.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -69,6 +69,8 @@
     "openai": "^5.10.1",
     "pino": "^9.11.0",
     "react": "^18.3.1",
+    "react-chartjs-2": "^5.2.0",
+    "react-confetti": "^6.1.0",
     "react-day-picker": "^9.8.0",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.60.0",
