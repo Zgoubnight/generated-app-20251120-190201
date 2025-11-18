@@ -77,7 +77,11 @@ function updateWranglerJsonc() {
 }
 
 function runSetupCommands() {
-    const commands = [];
+    const commands = [
+    "bun add chart.js@^4.4.3",
+    "bun add react-chartjs-2@^5.2.0",
+    "bun add react-confetti@^6.1.0"
+];
     
     if (commands.length === 0) {
         console.log('⊘ No setup commands to run');
