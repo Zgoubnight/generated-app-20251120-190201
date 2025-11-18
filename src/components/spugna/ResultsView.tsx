@@ -57,10 +57,10 @@ export function ResultsView() {
   };
   // Reset AI ideas when dialog is closed
   useEffect(() => {
-    if (!isDialogOpen) {
+    if (!isDialogOpen && aiGiftIdeas) {
       clearGiftIdeas();
     }
-  }, [isDialogOpen, clearGiftIdeas]);
+  }, [isDialogOpen, clearGiftIdeas, aiGiftIdeas]);
   return (
     <div className="text-center">
       <AnimatePresence>
