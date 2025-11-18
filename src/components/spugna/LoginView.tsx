@@ -9,7 +9,7 @@ import { useState } from 'react';
 export function LoginView() {
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const login = useSpugnaStore(s => s.login);
-  const playersWhoPlayed = useSpugnaStore(s => s.gameState?.playersWhoPlayed) || {};
+  const playersWhoPlayed = useSpugnaStore(s => s.playersWhoPlayed);
   const handleLogin = () => {
     if (selectedUser) {
       login(selectedUser);
@@ -47,7 +47,7 @@ export function LoginView() {
               <SelectContent>
                 {MEMBERS.filter(m => m.role === 'Giver/Recipient').map(member => (
                   <SelectItem key={member.id} value={member.id}>
-                    {member.name} {playersWhoPlayed[member.id] && '(A JOUÉ)'}
+                    {member.name} {playersWhoPlayed.has(member.id) && '(A JOUÉ)'}
                   </SelectItem>
                 ))}
               </SelectContent>

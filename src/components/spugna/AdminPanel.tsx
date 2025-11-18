@@ -14,11 +14,23 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useSpugnaStore } from '@/hooks/useSpugnaStore';
+import { toast } from 'sonner';
 export function AdminPanel() {
   const performInitialDraw = useSpugnaStore(s => s.performInitialDraw);
   const resetGlobalDraw = useSpugnaStore(s => s.resetGlobalDraw);
-  const isInitialDrawDone = useSpugnaStore(s => s.gameState?.isInitialDrawDone);
-  const isLoading = useSpugnaStore(s => s.isLoading);
+  const isInitialDrawDone = useSpugnaStore(s => s.isInitialDrawDone);
+  const handleInitialDraw = () => {
+    performInitialDraw();
+    toast.success("Tirage Global Effectué!", {
+      description: "Les joueurs peuvent maintenant découvrir leurs résultats.",
+    });
+  };
+  const handleReset = () => {
+    resetGlobalDraw();
+    toast.warning("Réinitialisation Globale!", {
+      description: "Tous les tirages ont été annulés. Le jeu est réinitialisé.",
+    });
+  };
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -36,7 +48,7 @@ export function AdminPanel() {
         <CardContent className="space-y-4">
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button className="w-full bg-spugna-dark-blue hover:bg-spugna-dark-blue/90" disabled={isInitialDrawDone || isLoading}>
+              <Button className="w-full bg-spugna-dark-blue hover:bg-spugna-dark-blue/90" disabled={isInitialDrawDone}>
                 <Play className="mr-2 h-4 w-4" />
                 Effectuer le Tirage Initial
               </Button>
@@ -45,19 +57,19 @@ export function AdminPanel() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Confirmer le tirage global ?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Cette action est irréversible et lancera le tirage pour tous les participants.
+                  Cette action est irr��versible et lancera le tirage pour tous les participants.
                   Êtes-vous sûr de vouloir continuer ?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction onClick={performInitialDraw}>Confirmer</AlertDialogAction>
+                <AlertDialogAction onClick={handleInitialDraw}>Confirmer</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="w-full" disabled={!isInitialDrawDone || isLoading}>
+              <Button variant="destructive" className="w-full" disabled={!isInitialDrawDone}>
                 <Trash2 className="mr-2 h-4 w-4" />
                 Réinitialiser le Tirage
               </Button>
@@ -72,7 +84,7 @@ export function AdminPanel() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction onClick={resetGlobalDraw} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                <AlertDialogAction onClick={handleReset} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                   Oui, tout réinitialiser
                 </AlertDialogAction>
               </AlertDialogFooter>

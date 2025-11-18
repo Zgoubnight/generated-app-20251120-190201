@@ -1,56 +1,40 @@
 import { create } from 'zustand';
-import { toast } from 'sonner';
 import type { Member } from '@/components/spugna/constants';
-import { MEMBERS } from '@/components/spugna/constants';
-import type { SpugnaState as GameState } from '../../worker/app-controller';
+import { MEMBERS, MOCK_RESULTS } from '@/components/spugna/constants';
 type SpugnaView = 'login' | 'wheel' | 'results' | 'chart';
 type SpugnaState = {
   currentUser: Member | null;
   currentView: SpugnaView;
-  gameState: GameState | null;
-  isLoading: boolean;
-  isGeneratingIdeas: boolean;
-  aiGiftIdeas: string | null;
+  hasPlayed: boolean;
+  userResults: string[];
+  playersWhoPlayed: Set<string>;
+  isInitialDrawDone: boolean;
 };
 type SpugnaActions = {
-  fetchGameState: () => Promise<void>;
   login: (userId: string) => void;
   logout: () => void;
-  spinWheel: () => Promise<void>;
+  spinWheel: () => void;
   showChart: () => void;
   backToWheel: () => void;
-  performInitialDraw: () => Promise<void>;
-  resetGlobalDraw: () => Promise<void>;
-  generateGiftIdeas: (recipients: string[]) => Promise<void>;
-  clearGiftIdeas: () => void;
+  performInitialDraw: () => void;
+  resetGlobalDraw: () => void;
 };
 export const useSpugnaStore = create<SpugnaState & SpugnaActions>((set, get) => ({
   currentUser: null,
   currentView: 'login',
-  gameState: null,
-  isLoading: true,
-  isGeneratingIdeas: false,
-  aiGiftIdeas: null,
-  fetchGameState: async () => {
-    set({ isLoading: true });
-    try {
-      const response = await fetch('/api/spugna/state');
-      if (!response.ok) throw new Error('Failed to fetch game state');
-      const { data } = await response.json();
-      set({ gameState: data, isLoading: false });
-    } catch (error) {
-      console.error(error);
-      toast.error("Erreur de connexion", { description: "Impossible de récupérer l'état du jeu." });
-      set({ isLoading: false });
-    }
-  },
+  hasPlayed: false,
+  userResults: [],
+  playersWhoPlayed: new Set(),
+  isInitialDrawDone: false, // Simulates that admin needs to run the draw first
   login: (userId: string) => {
     const user = MEMBERS.find(m => m.id === userId);
     if (user) {
-      const hasPlayed = get().gameState?.playersWhoPlayed[userId] ?? false;
+      const hasPlayed = get().playersWhoPlayed.has(userId);
       set({
         currentUser: user,
         currentView: hasPlayed ? 'results' : 'wheel',
+        hasPlayed: hasPlayed,
+        userResults: hasPlayed ? MOCK_RESULTS[userId] || [] : [],
       });
     }
   },
@@ -58,81 +42,38 @@ export const useSpugnaStore = create<SpugnaState & SpugnaActions>((set, get) => 
     set({
       currentUser: null,
       currentView: 'login',
-      aiGiftIdeas: null,
+      hasPlayed: false,
+      userResults: [],
     });
   },
-  spinWheel: async () => {
-    const { currentUser } = get();
-    if (!currentUser) return;
-    try {
-      const response = await fetch(`/api/spugna/played/${currentUser.id}`, { method: 'POST' });
-      if (!response.ok) throw new Error('Failed to mark as played');
-      const { data } = await response.json();
-      set({ gameState: data, currentView: 'results' });
-    } catch (error) {
-      console.error(error);
-      toast.error("Erreur", { description: "Impossible de sauvegarder votre action." });
+  spinWheel: () => {
+    const { currentUser, playersWhoPlayed } = get();
+    if (currentUser) {
+      const newPlayersWhoPlayed = new Set(playersWhoPlayed);
+      newPlayersWhoPlayed.add(currentUser.id);
+      set({
+        currentView: 'results',
+        hasPlayed: true,
+        userResults: MOCK_RESULTS[currentUser.id] || [],
+        playersWhoPlayed: newPlayersWhoPlayed,
+      });
     }
   },
   showChart: () => set({ currentView: 'chart' }),
-  backToWheel: () => {
-    const { currentUser, gameState } = get();
-    const hasPlayed = currentUser ? gameState?.playersWhoPlayed[currentUser.id] ?? false : false;
-    set({ currentView: hasPlayed ? 'results' : 'wheel' });
+  backToWheel: () => set(state => ({ currentView: state.hasPlayed ? 'results' : 'wheel' })),
+  performInitialDraw: () => {
+    // In a real scenario, this would trigger a backend call.
+    // Here, we just flip a flag to allow users to play.
+    set({ isInitialDrawDone: true });
   },
-  performInitialDraw: async () => {
-    set({ isLoading: true });
-    try {
-      const response = await fetch('/api/spugna/draw', { method: 'POST' });
-      if (!response.ok) throw new Error('Failed to perform draw');
-      const { data } = await response.json();
-      set({ gameState: data, isLoading: false });
-      toast.success("Tirage Global Effectué!", {
-        description: "Les joueurs peuvent maintenant découvrir leurs résultats.",
-      });
-    } catch (error) {
-      console.error(error);
-      toast.error("Erreur de Tirage", { description: "L'algorithme n'a pas pu trouver de solution." });
-      set({ isLoading: false });
-    }
+  resetGlobalDraw: () => {
+    // This is a global reset.
+    set({
+      isInitialDrawDone: false,
+      playersWhoPlayed: new Set(),
+      hasPlayed: false,
+      userResults: [],
+      currentView: get().currentUser ? 'wheel' : 'login',
+    });
   },
-  resetGlobalDraw: async () => {
-    set({ isLoading: true });
-    try {
-      const response = await fetch('/api/spugna/reset', { method: 'DELETE' });
-      if (!response.ok) throw new Error('Failed to reset draw');
-      const { data } = await response.json();
-      set(state => ({
-        gameState: data,
-        isLoading: false,
-        currentView: state.currentUser ? 'wheel' : 'login',
-        aiGiftIdeas: null,
-      }));
-      toast.warning("Réinitialisation Globale!", {
-        description: "Tous les tirages ont ét�� annulés. Le jeu est réinitialisé.",
-      });
-    } catch (error) {
-      console.error(error);
-      toast.error("Erreur", { description: "Impossible de réinitialiser le jeu." });
-      set({ isLoading: false });
-    }
-  },
-  generateGiftIdeas: async (recipients: string[]) => {
-    set({ isGeneratingIdeas: true });
-    try {
-      const response = await fetch('/api/spugna/generate-ideas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipients }),
-      });
-      if (!response.ok) throw new Error('Failed to generate ideas');
-      const { data } = await response.json();
-      set({ aiGiftIdeas: data.ideas, isGeneratingIdeas: false });
-    } catch (error) {
-      console.error(error);
-      toast.error("Erreur de l'IA", { description: "Impossible de générer des id��es cadeaux pour le moment." });
-      set({ isGeneratingIdeas: false });
-    }
-  },
-  clearGiftIdeas: () => set({ aiGiftIdeas: null }),
 }));

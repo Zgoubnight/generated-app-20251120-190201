@@ -1,20 +1,11 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSpugnaStore } from '@/hooks/useSpugnaStore';
-import { Sparkles, User, Loader, Bot } from 'lucide-react';
+import { Gift, Sparkles, User } from 'lucide-react';
 import ReactConfetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { ScrollArea } from '@/components/ui/scroll-area';
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -30,37 +21,20 @@ const itemVariants = {
     y: 0,
     opacity: 1,
     transition: {
-      type: 'spring' as const,
+      type: 'spring',
       stiffness: 100,
     },
   },
 };
 export function ResultsView() {
   const currentUser = useSpugnaStore(s => s.currentUser);
-  const optimalDraw = useSpugnaStore(s => s.gameState?.optimalDraw);
-  const generateGiftIdeas = useSpugnaStore(s => s.generateGiftIdeas);
-  const isGeneratingIdeas = useSpugnaStore(s => s.isGeneratingIdeas);
-  const aiGiftIdeas = useSpugnaStore(s => s.aiGiftIdeas);
-  const clearGiftIdeas = useSpugnaStore(s => s.clearGiftIdeas);
-  const userResults = currentUser && optimalDraw ? optimalDraw[currentUser.id] || [] : [];
+  const userResults = useSpugnaStore(s => s.userResults);
   const { width, height } = useWindowSize();
   const [showConfetti, setShowConfetti] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   useEffect(() => {
     const timer = setTimeout(() => setShowConfetti(false), 8000);
     return () => clearTimeout(timer);
   }, []);
-  const handleGenerateClick = () => {
-    if (userResults.length > 0) {
-      generateGiftIdeas(userResults);
-    }
-  };
-  // Reset AI ideas when dialog is closed
-  useEffect(() => {
-    if (!isDialogOpen && aiGiftIdeas) {
-      clearGiftIdeas();
-    }
-  }, [isDialogOpen, clearGiftIdeas, aiGiftIdeas]);
   return (
     <div className="text-center">
       <AnimatePresence>
@@ -103,52 +77,11 @@ export function ResultsView() {
         transition={{ duration: 0.5, delay: 1 }}
         className="mt-12"
       >
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              size="lg"
-              className="bg-spugna-dark-blue hover:bg-spugna-dark-blue/90 text-white font-bold text-xl px-8 py-6"
-              onClick={handleGenerateClick}
-            >
-              <Sparkles className="mr-3 h-6 w-6 text-spugna-gold" />
-              ✨ Générer des Idées Cadeaux IA
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[625px] bg-spugna-off-white">
-            <DialogHeader>
-              <DialogTitle className="font-display text-3xl text-spugna-dark-blue flex items-center gap-2">
-                <Bot className="w-8 h-8 text-spugna-red" />
-                Assistant Cadeaux IA
-              </DialogTitle>
-              <DialogDescription>
-                Voici quelques idées générées par l'IA pour vous inspirer.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              {isGeneratingIdeas && (
-                <div className="flex flex-col items-center justify-center h-48 gap-4 text-spugna-dark-blue">
-                  <Loader className="w-12 h-12 animate-spin" />
-                  <p className="font-semibold">L'IA réfléchit à des cadeaux parfaits...</p>
-                </div>
-              )}
-              {aiGiftIdeas && !isGeneratingIdeas && (
-                <ScrollArea className="h-72 w-full rounded-md border border-spugna-gold/50 p-4 bg-white/50">
-                  <div
-                    className="prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{
-                      __html: aiGiftIdeas
-                        .replace(/## (.*)/g, '<h2 class="text-spugna-dark-blue font-display text-xl">$1</h2>')
-                        .replace(/\* (.*)/g, '<li class="text-spugna-dark-blue/90">$1</li>')
-                    }}
-                  />
-                </ScrollArea>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-        <p className="text-sm text-muted-foreground mt-3">
-          Note: L'IA a une limite d'utilisation. Utilisez-la à bon escient !
-        </p>
+        <Button size="lg" className="bg-spugna-dark-blue hover:bg-spugna-dark-blue/90 text-white font-bold text-xl px-8 py-6">
+          <Sparkles className="mr-3 h-6 w-6 text-spugna-gold" />
+          ✨ Générer des Idées Cadeaux IA
+        </Button>
+        <p className="text-sm text-muted-foreground mt-3">(Fonctionnalité à venir dans la Phase 3)</p>
       </motion.div>
     </div>
   );

@@ -91,6 +91,11 @@ export default {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
+        'spugna-red': '#D62828',
+        'spugna-orange': '#F77F00',
+        'spugna-gold': '#FCBF49',
+        'spugna-off-white': '#EAE2B7',
+        'spugna-dark-blue': '#003049',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			muted: {
