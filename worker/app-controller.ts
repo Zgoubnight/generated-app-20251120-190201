@@ -2,14 +2,14 @@ import { DurableObject } from 'cloudflare:workers';
 import type { SessionInfo } from './types';
 import type { Env } from './core-utils';
 import { generateOptimalDraw } from './spugna';
-// Define the structure for our game's state
-export interface SpugnaState {
-  optimalDraw: Record<string, string[]> | null;
-  playersWhoPlayed: Record<string, boolean>;
-  isInitialDrawDone: boolean;
+interface DurableObjectState {
+  id?: string | number;
+
+  [key: string]: unknown;
+}export interface SpugnaState {optimalDraw: Record<string, string[]> | null;playersWhoPlayed: Record<string, boolean>;isInitialDrawDone: boolean;
   timestamp: number | null;
 }
-// 🤖 AI Extension Point: Add session management features
+
 export class AppController extends DurableObject<Env> {
   private sessions = new Map<string, SessionInfo>();
   private spugnaState: SpugnaState | null = null;
@@ -19,14 +19,14 @@ export class AppController extends DurableObject<Env> {
   }
   private async ensureLoaded(): Promise<void> {
     if (!this.loaded) {
-      const storedSessions = await this.ctx.storage.get<Record<string, SessionInfo>>('sessions') || {};
+      const storedSessions = (await this.ctx.storage.get<Record<string, SessionInfo>>('sessions')) || {};
       this.sessions = new Map(Object.entries(storedSessions));
       const storedSpugnaState = await this.ctx.storage.get<SpugnaState>('spugnaState');
       this.spugnaState = storedSpugnaState || {
         optimalDraw: null,
         playersWhoPlayed: {},
         isInitialDrawDone: false,
-        timestamp: null,
+        timestamp: null
       };
       this.loaded = true;
     }
@@ -35,7 +35,7 @@ export class AppController extends DurableObject<Env> {
     await this.ctx.storage.put('sessions', Object.fromEntries(this.sessions));
     await this.ctx.storage.put('spugnaState', this.spugnaState);
   }
-  // --- Spugna Game Methods ---
+
   async getSpugnaState(): Promise<SpugnaState | null> {
     await this.ensureLoaded();
     return this.spugnaState;
@@ -67,12 +67,12 @@ export class AppController extends DurableObject<Env> {
       optimalDraw: null,
       playersWhoPlayed: {},
       isInitialDrawDone: false,
-      timestamp: null,
+      timestamp: null
     };
     await this.persist();
     return this.spugnaState;
   }
-  // --- Existing Session Methods ---
+
   async addSession(sessionId: string, title?: string): Promise<void> {
     await this.ensureLoaded();
     const now = Date.now();
