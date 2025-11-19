@@ -4,13 +4,15 @@ import type { ChatState } from './types';
 import { ChatHandler } from './chat';
 import { API_RESPONSES } from './config';
 import { createMessage, createStreamResponse, createEncoder } from './utils';
-import type { DurableObjectState } from 'cloudflare:workers';
+import type { DurableObjectState, ExecutionContext } from '@cloudflare/workers-types';
 /**
  * ChatAgent - Main agent class using Cloudflare Agents SDK
  *
  * This class extends the Agents SDK Agent class and handles all chat operations.
  */
 export class ChatAgent extends Agent<Env, ChatState> {
+  // @ts-expect-error This is a private brand to ensure the class is only instantiated by the runtime
+  [__DURABLE_OBJECT_BRAND]: never;
   private chatHandler?: ChatHandler;
   // Initial state for new chat sessions
   initialState: ChatState = {
@@ -19,13 +21,15 @@ export class ChatAgent extends Agent<Env, ChatState> {
     isProcessing: false,
     model: 'google-ai-studio/gemini-2.5-flash'
   };
-  constructor(ctx: DurableObjectState, env: Env) {
-    super(ctx, env);
+  env: Env;
+  constructor(state: DurableObjectState, env: Env, ctx: ExecutionContext) {
+    super({ state, env });
+    this.env = env;
   }
   /**
    * Initialize chat handler when agent starts
    */
-  async onStart(): Promise<void> {
+  onStart(): void {
     this.chatHandler = new ChatHandler(
       this.env.CF_AI_BASE_URL ,
       this.env.CF_AI_API_KEY,

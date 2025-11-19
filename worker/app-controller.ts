@@ -1,26 +1,30 @@
-import { DurableObject } from 'cloudflare:workers';
+
 import type { SessionInfo } from './types';
 import type { Env } from './core-utils';
 import { generateOptimalDraw } from './spugna';
-import type { DurableObjectState } from 'cloudflare:workers';
+import { type DurableObject, type DurableObjectState, type ExecutionContext, type Request, Response } from '@cloudflare/workers-types';
 export interface SpugnaState {
   optimalDraw: Record<string, string[]> | null;
   playersWhoPlayed: Record<string, boolean>;
   isInitialDrawDone: boolean;
   timestamp: number | null;
 }
-export class AppController extends DurableObject<Env> {
+export class AppController implements DurableObject {
+  [__Durable_OBJECT_BRAND]: never;
+  state: DurableObjectState;
+  env: Env;
   private sessions = new Map<string, SessionInfo>();
   private spugnaState: SpugnaState | null = null;
   private loaded = false;
-  constructor(ctx: DurableObjectState, env: Env) {
-    super(ctx, env);
+  constructor(state: DurableObjectState, env: Env) {
+    this.state = state;
+    this.env = env;
   }
   private async ensureLoaded(): Promise<void> {
     if (!this.loaded) {
-      const storedSessions = (await this.ctx.storage.get<Record<string, SessionInfo>>('sessions')) || {};
+      const storedSessions = (await this.state.storage.get<Record<string, SessionInfo>>('sessions')) || {};
       this.sessions = new Map(Object.entries(storedSessions));
-      const storedSpugnaState = await this.ctx.storage.get<SpugnaState>('spugnaState');
+      const storedSpugnaState = await this.state.storage.get<SpugnaState>('spugnaState');
       this.spugnaState = storedSpugnaState || {
         optimalDraw: null,
         playersWhoPlayed: {},
@@ -31,8 +35,8 @@ export class AppController extends DurableObject<Env> {
     }
   }
   private async persist(): Promise<void> {
-    await this.ctx.storage.put('sessions', Object.fromEntries(this.sessions));
-    await this.ctx.storage.put('spugnaState', this.spugnaState);
+    await this.state.storage.put('sessions', Object.fromEntries(this.sessions));
+    await this.state.storage.put('spugnaState', this.spugnaState);
   }
   async getSpugnaState(): Promise<SpugnaState | null> {
     await this.ensureLoaded();
@@ -123,5 +127,42 @@ export class AppController extends DurableObject<Env> {
     this.sessions.clear();
     await this.persist();
     return count;
+  }
+
+  async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    const path = url.pathname;
+
+    try {
+      if (path === '/spugna/state' && request.method === 'GET') {
+        const state = await this.getSpugnaState();
+        return new Response(JSON.stringify(state), { headers: { 'Content-Type': 'application/json' } });
+      }
+
+      if (path === '/spugna/draw' && request.method === 'POST') {
+        const state = await this.performSpugnaDraw();
+        return new Response(JSON.stringify(state), { headers: { 'Content-Type': 'application/json' } });
+      }
+
+      if (path === '/spugna/play' && request.method === 'POST') {
+        const { userId } = await request.json<{ userId: string }>();
+        if (!userId) {
+          return new Response('Missing userId', { status: 400 });
+        }
+        const state = await this.setPlayerPlayed(userId);
+        return new Response(JSON.stringify(state), { headers: { 'Content-Type': 'application/json' } });
+      }
+
+      if (path === '/spugna/reset' && request.method === 'POST') {
+        const state = await this.resetSpugnaState();
+        return new Response(JSON.stringify(state), { headers: { 'Content-Type': 'application/json' } });
+      }
+
+      return new Response('Not Found', { status: 404 });
+    } catch (error) {
+      console.error('Durable Object error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An internal error occurred';
+      return new Response(errorMessage, { status: 500 });
+    }
   }
 }

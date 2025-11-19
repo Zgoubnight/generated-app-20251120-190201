@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { getAgentByName } from 'agents';
+import type { AgentNamespace } from 'agents';
 import { ChatAgent } from './agent';
 import { API_RESPONSES } from './config';
 import { Env, getAppController, registerSession, unregisterSession } from "./core-utils";

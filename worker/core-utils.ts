@@ -1,13 +1,13 @@
 import type { AppController } from './app-controller';
 import type { ChatAgent } from './agent';
-import type { DurableObjectNamespace, DurableObjectStub } from 'cloudflare:workers';
+import type { DurableObjectNamespace, DurableObjectStub } from '@cloudflare/workers-types';
 export interface Env {
   CF_AI_BASE_URL: string;
   CF_AI_API_KEY: string;
   SERPAPI_KEY: string;
   OPENROUTER_API_KEY: string;
-  CHAT_AGENT: DurableObjectNamespace<ChatAgent>;
-  APP_CONTROLLER: DurableObjectNamespace<AppController>;
+  CHAT_AGENT: DurableObjectNamespace;
+  APP_CONTROLLER: DurableObjectNamespace;
 }
 export function getAppController(env: Env): DurableObjectStub<AppController> {
   const id = env.APP_CONTROLLER.idFromName("controller");
