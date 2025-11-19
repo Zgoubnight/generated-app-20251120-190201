@@ -18,7 +18,12 @@ export function HomePage() {
   const showChart = useSpugnaStore(s => s.showChart);
   const backToWheel = useSpugnaStore(s => s.backToWheel);
   useEffect(() => {
+    // Initial fetch to load data immediately
     fetchGameState();
+    // Set up polling to get real-time updates from other players
+    const intervalId = setInterval(fetchGameState, 5000); // Poll every 5 seconds
+    // Cleanup interval on component unmount to prevent memory leaks
+    return () => clearInterval(intervalId);
   }, [fetchGameState]);
   const renderView = () => {
     if (isLoading && !currentUser) {

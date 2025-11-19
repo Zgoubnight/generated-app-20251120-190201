@@ -23,7 +23,11 @@ ChartJS.register(
   Legend
 );
 export function EquityChartView() {
-  const optimalDraw = useSpugnaStore(s => s.gameState?.optimalDraw);
+  const { optimalDraw, playersWhoPlayed } = useSpugnaStore(s => ({
+    optimalDraw: s.gameState?.optimalDraw,
+    playersWhoPlayed: s.gameState?.playersWhoPlayed,
+  }));
+
   const chartData = useMemo(() => {
     const recipientCounts: Record<string, number> = {};
     MEMBERS.forEach(m => { recipientCounts[m.name] = 0; });
@@ -34,23 +38,37 @@ export function EquityChartView() {
         }
       });
     }
+    const baseColors = ['#D62828', '#F77F00', '#FCBF49', '#003049'];
+    const backgroundColors = MEMBERS.map((member, index) => {
+      const hasPlayed = playersWhoPlayed && playersWhoPlayed[member.name];
+      // Use a slightly desaturated color if the player hasn't played their turn yet
+      return hasPlayed ? baseColors[index % baseColors.length] : `${baseColors[index % baseColors.length]}B3`; // Add alpha for "not played"
+    });
+
+    const borderColors = MEMBERS.map(member => {
+      const hasPlayed = playersWhoPlayed && playersWhoPlayed[member.name];
+      // Use a more prominent border for players who have played
+      return hasPlayed ? '#003049' : '#EAE2B7';
+    });
+
+    const borderWidths = MEMBERS.map(member => {
+      const hasPlayed = playersWhoPlayed && playersWhoPlayed[member.name];
+      return hasPlayed ? 2 : 1;
+    });
+
     return {
       labels: MEMBERS.map(m => m.name),
       datasets: [
         {
           label: '# of Gifts Received',
           data: MEMBERS.map(m => recipientCounts[m.name]),
-          backgroundColor: [
-            '#D62828', '#F77F00', '#FCBF49', '#003049',
-            '#D62828', '#F77F00', '#FCBF49', '#003049',
-            '#D62828', '#F77F00', '#FCBF49'
-          ],
-          borderColor: MEMBERS.map(() => '#EAE2B7'),
-          borderWidth: 1,
+          backgroundColor: backgroundColors,
+          borderColor: borderColors,
+          borderWidth: borderWidths,
         },
       ],
     };
-  }, [optimalDraw]);
+  }, [optimalDraw, playersWhoPlayed]);
   const options = {
     responsive: true,
     maintainAspectRatio: false,
