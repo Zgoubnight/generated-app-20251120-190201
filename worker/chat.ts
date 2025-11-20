@@ -22,7 +22,6 @@ export class ChatHandler {
       baseURL: aiGatewayUrl,
       apiKey: apiKey
     });
-    console.log("BASE URL", aiGatewayUrl);
   }
   /**
    * Generate a single, non-streaming response for a given prompt.
@@ -65,10 +64,10 @@ export class ChatHandler {
     content: string;
     toolCalls?: ToolCall[];
   }> {
-    const messages = this.buildConversationMessages(message, conversationHistory);
     if (!this.client) {
         return { content: 'L\'IA n\'est pas disponible. Réessayez plus tard ou contactez l\'administrateur.', toolCalls: [] };
     }
+    const messages = this.buildConversationMessages(message, conversationHistory);
     const toolDefinitions = await getToolDefinitions();
     if (onChunk) {
       // Use streaming with callback
@@ -77,9 +76,8 @@ export class ChatHandler {
         messages,
         tools: toolDefinitions,
         tool_choice: 'auto',
-        max_completion_tokens: 16000,
+        max_tokens: 16000,
         stream: true,
-        // reasoning_effort: 'low'
       });
       return this.handleStreamResponse(stream, message, conversationHistory, onChunk);
     }
