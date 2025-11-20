@@ -44,13 +44,13 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
                 return member ? `${name} (${member.role === 'Child/Recipient' ? 'enfant' : 'adulte'})` : name;
             }).join(', ');
             const prompt = `Pour une fête de Noël en famille, génère 2 idées de cadeaux originales et personnalisées pour chacune des personnes suivantes : ${recipientDetails}. Formatte la réponse en Markdown, avec le nom de chaque personne comme un titre de niveau 2 (## Nom) et les idées de cadeaux comme une liste à puces.`;
-            // We can instantiate ChatHandler directly for one-off tasks
             const chatHandler = new ChatHandler(c.env.CF_AI_BASE_URL, c.env.CF_AI_API_KEY, 'google-ai-studio/gemini-2.5-flash');
             const ideas = await chatHandler.generateSingleResponse(prompt);
             return c.json({ success: true, data: { ideas } });
         } catch (error) {
             console.error('Failed to generate gift ideas:', error);
-            return c.json({ success: false, error: 'Failed to generate gift ideas' }, { status: 500 });
+            const errorMessage = error instanceof Error ? error.message : 'Failed to generate gift ideas';
+            return c.json({ success: false, error: errorMessage }, { status: 500 });
         }
     });
     // GET /api/spugna/state - Get the current state of the game
@@ -67,8 +67,6 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     // POST /api/spugna/draw - (Admin) Perform the initial draw
     app.post('/api/spugna/draw', async (c) => {
         try {
-            // In a real app, you'd have auth to check for admin status.
-            // Here we trust the client-side check for simplicity.
             const controller = getAppController(c.env);
             const state = await controller.performSpugnaDraw();
             if (!state?.optimalDraw) {
@@ -99,7 +97,6 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     // DELETE /api/spugna/reset - (Admin) Reset the entire game
     app.delete('/api/spugna/reset', async (c) => {
         try {
-            // Admin check would go here.
             const controller = getAppController(c.env);
             const state = await controller.resetSpugnaState();
             return c.json({ success: true, data: state });

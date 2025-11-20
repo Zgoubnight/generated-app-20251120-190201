@@ -1,6 +1,5 @@
 import type { AppController } from './app-controller';
-import type { ChatAgent } from './agent';
-import type { DurableObjectNamespace, DurableObjectStub } from '@cloudflare/workers-types';
+import type { DurableObjectNamespace } from '@cloudflare/workers-types';
 export interface Env {
   CF_AI_BASE_URL: string;
   CF_AI_API_KEY: string;
@@ -27,36 +26,36 @@ export function getAppController(env: Env): AppController {
     clearAllSessions: { method: 'POST', path: '/sessions/clear' },
   };
   return new Proxy({} as AppController, {
-  get(target, prop) {
-    if (typeof prop === 'string' && prop !== 'then') { // Avoid proxying Promise methods
-      const mapping = methodMappings[prop];
-      if (mapping) {
-        return async (...args: any[]) => {
-          const body = mapping.body ? JSON.stringify(mapping.body(args)) : (mapping.method === 'POST' ? JSON.stringify(args) : undefined);
-          const request = new Request(`https://dummy${mapping.path}`, {
-            method: mapping.method,
-            headers: { 'Content-Type': 'application/json' },
-            body,
-          });
-          const response = await stub.fetch(request as any);
-          return response.json();
-        };
-      } else {
-        // Fallback for unmapped methods
-        return async (...args: any[]) => {
-          const path = prop.replace(/([A-Z])/g, '-$1').toLowerCase(); // Convert camelCase to kebab-case for path
-          const request = new Request(`https://dummy/${path}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(args),
-          });
-          const response = await stub.fetch(request as any);
-          return response.json();
-        };
+    get(target, prop) {
+      if (typeof prop === 'string' && prop !== 'then') { // Avoid proxying Promise methods
+        const mapping = methodMappings[prop];
+        if (mapping) {
+          return async (...args: any[]) => {
+            try {
+              const body = mapping.body ? JSON.stringify(mapping.body(args)) : undefined;
+              const request = new Request(`https://do-proxy${mapping.path}`, {
+                method: mapping.method,
+                headers: { 'Content-Type': 'application/json' },
+                body,
+              });
+              const response = await stub.fetch(request);
+              if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Durable Object fetch failed with status ${response.status}: ${errorText}`);
+              }
+              return await response.json();
+            } catch (error) {
+              console.error(`Proxy error for '${prop}':`, error);
+              if (prop === 'getSpugnaState') {
+                return { optimalDraw: null, playersWhoPlayed: {}, isInitialDrawDone: false, timestamp: null };
+              }
+              throw error; // Re-throw to be caught by the route handler
+            }
+          };
+        }
       }
-    }
-    return typeof prop === 'string' ? target[prop as keyof AppController] : undefined;
-  },
+      return Reflect.get(target, prop);
+    },
   });
 }
 export async function registerSession(env: Env, sessionId: string, title?: string): Promise<void> {

@@ -11,26 +11,33 @@ import type { DurableObjectState, ExecutionContext } from '@cloudflare/workers-t
  * This class extends the Agents SDK Agent class and handles all chat operations.
  */
 export class ChatAgent extends Agent<Env, ChatState> {
-  private chatHandler?: ChatHandler;
+  private chatHandler: ChatHandler | null = null;
   env: Env;
   constructor(state: DurableObjectState, env: Env, ctx: ExecutionContext) {
-    super({ state, env, ctx }, {
+    const initialState: ChatState = {
       messages: [],
       sessionId: crypto.randomUUID(),
       isProcessing: false,
       model: 'google-ai-studio/gemini-2.5-flash'
-    });
+    };
+    super({ state, env, ctx }, initialState);
     this.env = env;
   }
   /**
    * Initialize chat handler when agent starts
    */
   onStart(): void {
-    this.chatHandler = new ChatHandler(
-      this.env.CF_AI_BASE_URL ,
-      this.env.CF_AI_API_KEY,
-      this.state.model
-    );
+    const { CF_AI_BASE_URL, CF_AI_API_KEY } = this.env;
+    if (CF_AI_BASE_URL && CF_AI_API_KEY && !CF_AI_BASE_URL.includes('YOUR') && !CF_AI_API_KEY.includes('your')) {
+      this.chatHandler = new ChatHandler(
+        CF_AI_BASE_URL,
+        CF_AI_API_KEY,
+        this.state.model
+      );
+    } else {
+      console.warn(`ChatAgent ${this.name}: AI configuration is missing or incomplete. AI features will be disabled.`);
+      this.chatHandler = null;
+    }
     console.log(`ChatAgent ${this.name} initialized with session ${this.state.sessionId}`);
   }
   /**
@@ -78,6 +85,9 @@ export class ChatAgent extends Agent<Env, ChatState> {
    * Process new chat message
    */
   private async handleChatMessage(body: { message: string; model?: string; stream?: boolean }): Promise<Response> {
+    if (!this.chatHandler) {
+      return Response.json({ success: false, error: 'AI features are not available due to missing configuration.' }, { status: 503 });
+    }
     const { message, model, stream } = body;
     // Validate input
     if (!message?.trim()) {
@@ -98,10 +108,6 @@ export class ChatAgent extends Agent<Env, ChatState> {
       isProcessing: true
     });
     try {
-      // Process message through chat handler
-      if (!this.chatHandler) {
-        throw new Error('Chat handler not initialized');
-      }
       if (stream) {
         const { readable, writable } = new TransformStream();
         const writer = writable.getWriter();
