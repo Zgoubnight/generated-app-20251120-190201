@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Toaster } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { Home, BarChart2, LogOut, Loader } from 'lucide-react';
@@ -9,6 +9,7 @@ import { WheelView } from '@/components/spugna/WheelView';
 import { ResultsView } from '@/components/spugna/ResultsView';
 import { EquityChartView } from '@/components/spugna/EquityChartView';
 import { AdminPanel } from '@/components/spugna/AdminPanel';
+import { PreviewPanel } from '@/components/PreviewPanel';
 export function HomePage() {
   const currentView = useSpugnaStore(s => s.currentView);
   const currentUser = useSpugnaStore(s => s.currentUser);
@@ -49,13 +50,15 @@ export function HomePage() {
   };
   return (
     <div className="min-h-screen w-full bg-spugna-off-white font-sans flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden">
-      <AnimatePresence mode="wait">
-        <main key={currentView} className="w-full max-w-7xl mx-auto flex-grow flex items-center justify-center">
-          {renderView()}
-        </main>
-      </AnimatePresence>
+      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-12 flex-grow flex items-center justify-center">
+        <AnimatePresence mode="wait">
+          <div key={currentView} className="w-full">
+            {renderView()}
+          </div>
+        </AnimatePresence>
+      </main>
       {currentUser && (
-        <nav className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 p-2 rounded-full bg-white/50 backdrop-blur-md shadow-lg border border-spugna-gold/30">
+        <nav className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 p-2 rounded-full bg-white/50 backdrop-blur-md shadow-lg border border-spugna-gold/30">
           {currentView === 'chart' ? (
             <Button variant="ghost" size="icon" onClick={backToWheel} className="rounded-full">
               <Home className="h-5 w-5 text-spugna-dark-blue" />
@@ -72,8 +75,15 @@ export function HomePage() {
       )}
       {currentUser?.isAdmin && <AdminPanel />}
       <footer className="absolute bottom-2 right-4 text-xs text-spugna-dark-blue/50">
-        Built with ��️ at Cloudflare
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+        >
+          Built with ❤️ at Cloudflare
+        </motion.p>
       </footer>
+      <PreviewPanel />
       <Toaster richColors position="top-center" />
     </div>
   );

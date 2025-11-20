@@ -2,7 +2,7 @@
 import type { SessionInfo } from './types';
 import type { Env } from './core-utils';
 import { generateOptimalDraw } from './spugna';
-import { type DurableObject, type DurableObjectState, type ExecutionContext, type Request, Response } from '@cloudflare/workers-types';
+import { type DurableObject, type DurableObjectState, type ExecutionContext, type Request, type Response } from '@cloudflare/workers-types';
 export interface SpugnaState {
   optimalDraw: Record<string, string[]> | null;
   playersWhoPlayed: Record<string, boolean>;
@@ -10,7 +10,7 @@ export interface SpugnaState {
   timestamp: number | null;
 }
 export class AppController implements DurableObject {
-  [__Durable_OBJECT_BRAND]: never;
+  [__DURABLE_OBJECT_BRAND]: never;
   state: DurableObjectState;
   env: Env;
   private sessions = new Map<string, SessionInfo>();
