@@ -1,7 +1,7 @@
 import type { SessionInfo } from './types';
 import type { Env } from './core-utils';
 import { generateOptimalDraw } from './spugna';
-import type { DurableObjectState, Request, Response } from '@cloudflare/workers-types';
+import { DurableObjectState, Request, Response } from '@cloudflare/workers-types';
 export interface SpugnaState {
   optimalDraw: Record<string, string[]> | null;
   playersWhoPlayed: Record<string, boolean>;

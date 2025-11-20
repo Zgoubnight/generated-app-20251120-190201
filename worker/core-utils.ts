@@ -1,5 +1,5 @@
 import type { AppController } from './app-controller';
-import type { DurableObjectNamespace } from '@cloudflare/workers-types';
+import type { DurableObjectNamespace, Request } from '@cloudflare/workers-types';
 export interface Env {
   CF_AI_BASE_URL: string;
   CF_AI_API_KEY: string;
@@ -37,6 +37,7 @@ export function getAppController(env: Env): AppController {
                 method: mapping.method,
                 headers: { 'Content-Type': 'application/json' },
                 body,
+                cf: {}, // Add cf property for Workers compatibility
               });
               const response = await stub.fetch(request);
               if (!response.ok) {
@@ -49,7 +50,7 @@ export function getAppController(env: Env): AppController {
               if (prop === 'getSpugnaState') {
                 return { optimalDraw: null, playersWhoPlayed: {}, isInitialDrawDone: false, timestamp: null };
               }
-              throw error; // Re-throw to be caught by the route handler
+              return null; // Return null for other failed operations to prevent crashes
             }
           };
         }

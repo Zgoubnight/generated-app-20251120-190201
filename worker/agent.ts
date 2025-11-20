@@ -4,7 +4,7 @@ import type { ChatState } from './types';
 import { ChatHandler } from './chat';
 import { API_RESPONSES } from './config';
 import { createMessage, createStreamResponse, createEncoder } from './utils';
-import type { DurableObjectState, ExecutionContext } from '@cloudflare/workers-types';
+import type { DurableObjectState, ExecutionContext, Request, Response } from '@cloudflare/workers-types';
 /**
  * ChatAgent - Main agent class using Cloudflare Agents SDK
  *
@@ -20,7 +20,7 @@ export class ChatAgent extends Agent<Env, ChatState> {
       isProcessing: false,
       model: 'google-ai-studio/gemini-2.5-flash'
     };
-    super({ state, env, ctx }, initialState);
+    super(state, env, ctx, initialState);
     this.env = env;
   }
   /**
