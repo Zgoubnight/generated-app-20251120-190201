@@ -4,54 +4,58 @@
  * Runs once after git clone to setup project correctly
  * This file will self-delete after successful execution
  */
-
 const fs = require('fs');
-const { execSync } = require('child_process');
-
+const { execSync, spawn } = require('child_process');
 const PROJECT_NAME = "la-roue-spugna-_vqb0ygowhxql9bjsn0jd";
 const BOOTSTRAP_MARKER = '.bootstrap-complete';
-
 // Check if already bootstrapped
 if (fs.existsSync(BOOTSTRAP_MARKER)) {
     console.log('✓ Bootstrap already completed');
     process.exit(0);
 }
-
 console.log('🚀 Running first-time project setup...\n');
-
 try {
     // Update package.json
     updatePackageJson();
-    
     // Update wrangler.jsonc if exists
     updateWranglerJsonc();
-    
+    // Verify and install dependencies
+    console.log('Running dependency verification...');
+    try {
+        execSync('bun install --frozen-lockfile', { stdio: 'inherit', cwd: process.cwd() });
+        console.log('✓ Dependencies verified and installed');
+    } catch (installError) {
+        console.error('Dependency install failed:', installError.message);
+        throw new Error('Bootstrap failed due to dependency issues');
+    }
     // Run setup commands
     runSetupCommands();
-    
+    // Run startup health check
+    console.log('Running startup health check...');
+    try {
+        execSync('bun run cf-typegen', { stdio: 'inherit' });
+        console.log('✓ Types generated successfully');
+    } catch (typegenError) {
+        console.warn('Type generation warning (non-fatal):', typegenError.message);
+    }
     // Mark as complete
     fs.writeFileSync(BOOTSTRAP_MARKER, new Date().toISOString());
-    
     // Self-delete
     fs.unlinkSync(__filename);
-    
     console.log('\n✅ Bootstrap complete! Project ready.');
 } catch (error) {
     console.error('❌ Bootstrap failed:', error.message);
-    console.log('You may need to manually update package.json and wrangler.jsonc');
+    console.error('Bootstrap error details:', error.stack || error);
     process.exit(1);
 }
-
 function updatePackageJson() {
     try {
         const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
         pkg.name = PROJECT_NAME;
-        
         // Remove prepare script after bootstrap
         if (pkg.scripts && pkg.scripts.prepare) {
             delete pkg.scripts.prepare;
         }
-        
         fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
         console.log('✓ Updated package.json with project name: ' + PROJECT_NAME);
     } catch (error) {
@@ -59,13 +63,11 @@ function updatePackageJson() {
         throw error;
     }
 }
-
 function updateWranglerJsonc() {
     if (!fs.existsSync('wrangler.jsonc')) {
         console.log('⊘ wrangler.jsonc not found, skipping');
         return;
     }
-    
     try {
         let content = fs.readFileSync('wrangler.jsonc', 'utf8');
         content = content.replace(/"name"\s*:\s*"[^"]*"/, `"name": "${PROJECT_NAME}"`);
@@ -75,7 +77,6 @@ function updateWranglerJsonc() {
         console.warn('⚠️  Failed to update wrangler.jsonc:', error.message);
     }
 }
-
 function runSetupCommands() {
     const commands = [
     "bun add chart.js@^4.4.3",
@@ -83,21 +84,17 @@ function runSetupCommands() {
     "bun add react-confetti@^6.1.0",
     "bun install chart.js react-chartjs-2 react-confetti"
 ];
-    
     if (commands.length === 0) {
         console.log('⊘ No setup commands to run');
         return;
     }
-    
     console.log('\n📦 Running setup commands...\n');
-    
     let successCount = 0;
     let failCount = 0;
-    
     for (const cmd of commands) {
         console.log(`▸ ${cmd}`);
         try {
-            execSync(cmd, { 
+            execSync(cmd, {
                 stdio: 'inherit',
                 cwd: process.cwd()
             });
@@ -108,6 +105,5 @@ function runSetupCommands() {
             console.warn(`   Error: ${error.message}`);
         }
     }
-    
     console.log(`\n✓ Commands completed: ${successCount} successful, ${failCount} failed\n`);
 }

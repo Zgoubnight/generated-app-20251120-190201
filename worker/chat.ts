@@ -9,21 +9,29 @@ import { ChatCompletionMessageFunctionToolCall } from 'openai/resources/index.mj
  * making it easy for AI developers to understand and extend the functionality.
  */
 export class ChatHandler {
-  private client: OpenAI;
+  private client: OpenAI | null;
   private model: string;
   constructor(aiGatewayUrl: string, apiKey: string, model: string) {
+    this.model = model;
+    if (!aiGatewayUrl || !apiKey || aiGatewayUrl.includes('YOUR_ACCOUNT_ID') || apiKey.includes('your-cloudflare-api-key')) {
+      console.warn('AI configuration missing or incomplete. AI features will be disabled.');
+      this.client = null;
+      return;
+    }
     this.client = new OpenAI({
       baseURL: aiGatewayUrl,
       apiKey: apiKey
     });
     console.log("BASE URL", aiGatewayUrl);
-    this.model = model;
   }
   /**
    * Generate a single, non-streaming response for a given prompt.
    * This is ideal for one-off tasks that don't require conversation history.
    */
   async generateSingleResponse(prompt: string): Promise<string> {
+    if (!this.client) {
+      return 'L\'IA n\'est pas configurée pour le moment. Les idées cadeaux seront disponibles une fois l\'API Gemini activée par l\'administrateur.';
+    }
     try {
       const completion = await this.client.chat.completions.create({
         model: this.model,
@@ -58,6 +66,9 @@ export class ChatHandler {
     toolCalls?: ToolCall[];
   }> {
     const messages = this.buildConversationMessages(message, conversationHistory);
+    if (!this.client) {
+        return { content: 'L\'IA n\'est pas disponible. Réessayez plus tard ou contactez l\'administrateur.', toolCalls: [] };
+    }
     const toolDefinitions = await getToolDefinitions();
     if (onChunk) {
       // Use streaming with callback
@@ -193,6 +204,9 @@ export class ChatHandler {
     openAiToolCalls: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[],
     toolResults: ToolCall[]
   ): Promise<string> {
+    if (!this.client) {
+        return 'Tool results processed, but AI is unavailable for a final summary.';
+    }
     const followUpCompletion = await this.client.chat.completions.create({
       model: this.model,
       messages: [
@@ -234,6 +248,7 @@ export class ChatHandler {
    * Update the model for this chat handler
    */
   updateModel(newModel: string): void {
+    if (!this.client) return;
     this.model = newModel;
   }
 }
