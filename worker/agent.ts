@@ -12,16 +12,14 @@ import type { DurableObjectState, ExecutionContext } from '@cloudflare/workers-t
  */
 export class ChatAgent extends Agent<Env, ChatState> {
   private chatHandler?: ChatHandler;
-  // Initial state for new chat sessions
-  initialState: ChatState = {
-    messages: [],
-    sessionId: crypto.randomUUID(),
-    isProcessing: false,
-    model: 'google-ai-studio/gemini-2.5-flash'
-  };
   env: Env;
   constructor(state: DurableObjectState, env: Env, ctx: ExecutionContext) {
-    super({ state, env, ctx });
+    super({ state, env, ctx }, {
+      messages: [],
+      sessionId: crypto.randomUUID(),
+      isProcessing: false,
+      model: 'google-ai-studio/gemini-2.5-flash'
+    });
     this.env = env;
   }
   /**

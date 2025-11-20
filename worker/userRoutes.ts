@@ -14,7 +14,7 @@ export function coreRoutes(app: Hono<{ Bindings: Env }>) {
     app.all('/api/chat/:sessionId/*', async (c) => {
         try {
         const sessionId = c.req.param('sessionId');
-        const agent = await getAgentByName<Env, ChatAgent>(c.env.CHAT_AGENT, sessionId); // Get existing agent or create a new one if it doesn't exist, with sessionId as the name
+        const agent = await getAgentByName<Env, ChatAgent>(c.env.CHAT_AGENT as unknown as AgentNamespace<ChatAgent>, sessionId); // Get existing agent or create a new one if it doesn't exist, with sessionId as the name
         const url = new URL(c.req.url);
         url.pathname = url.pathname.replace(`/api/chat/${sessionId}`, '');
         return agent.fetch(new Request(url.toString(), {

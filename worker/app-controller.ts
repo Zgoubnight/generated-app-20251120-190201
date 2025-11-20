@@ -2,7 +2,7 @@
 import type { SessionInfo } from './types';
 import type { Env } from './core-utils';
 import { generateOptimalDraw } from './spugna';
-import { type DurableObject, type DurableObjectState, type ExecutionContext, type Request, type Response } from '@cloudflare/workers-types';
+import { type DurableObject, type DurableObjectState, type ExecutionContext, type Request, Response } from '@cloudflare/workers-types';
 export interface SpugnaState {
   optimalDraw: Record<string, string[]> | null;
   playersWhoPlayed: Record<string, boolean>;
@@ -155,6 +155,66 @@ export class AppController implements DurableObject {
       if (path === '/spugna/reset' && request.method === 'POST') {
         const state = await this.resetSpugnaState();
         return new Response(JSON.stringify(state), { headers: { 'Content-Type': 'application/json' } });
+      }
+
+      if (path === '/sessions' && request.method === 'GET') {
+        const sessions = await this.listSessions();
+        return new Response(JSON.stringify(sessions), { headers: { 'Content-Type': 'application/json' } });
+      }
+
+      if (path === '/sessions/add' && request.method === 'POST') {
+        const { sessionId, title } = await request.json<{ sessionId: string; title?: string }>();
+        if (!sessionId) {
+          return new Response('Missing sessionId', { status: 400 });
+        }
+        await this.addSession(sessionId, title);
+        return new Response('Session added', { status: 200 });
+      }
+
+      if (path === '/sessions/remove' && request.method === 'POST') {
+        const { sessionId } = await request.json<{ sessionId: string }>();
+        if (!sessionId) {
+          return new Response('Missing sessionId', { status: 400 });
+        }
+        const deleted = await this.removeSession(sessionId);
+        return new Response(JSON.stringify({ deleted }), { headers: { 'Content-Type': 'application/json' } });
+      }
+
+      if (path === '/sessions/update-activity' && request.method === 'POST') {
+        const { sessionId } = await request.json<{ sessionId: string }>();
+        if (!sessionId) {
+          return new Response('Missing sessionId', { status: 400 });
+        }
+        await this.updateSessionActivity(sessionId);
+        return new Response('Activity updated', { status: 200 });
+      }
+
+      if (path === '/sessions/update-title' && request.method === 'POST') {
+        const { sessionId, title } = await request.json<{ sessionId: string; title: string }>();
+        if (!sessionId || !title) {
+          return new Response('Missing sessionId or title', { status: 400 });
+        }
+        const updated = await this.updateSessionTitle(sessionId, title);
+        return new Response(JSON.stringify({ updated }), { headers: { 'Content-Type': 'application/json' } });
+      }
+
+      if (path === '/sessions/count' && request.method === 'GET') {
+        const count = await this.getSessionCount();
+        return new Response(JSON.stringify({ count }), { headers: { 'Content-Type': 'application/json' } });
+      }
+
+      if (path === '/sessions/get' && request.method === 'POST') {
+        const { sessionId } = await request.json<{ sessionId: string }>();
+        if (!sessionId) {
+          return new Response('Missing sessionId', { status: 400 });
+        }
+        const session = await this.getSession(sessionId);
+        return new Response(JSON.stringify(session), { headers: { 'Content-Type': 'application/json' } });
+      }
+
+      if (path === '/sessions/clear' && request.method === 'POST') {
+        const cleared = await this.clearAllSessions();
+        return new Response(JSON.stringify({ cleared }), { headers: { 'Content-Type': 'application/json' } });
       }
 
       return new Response('Not Found', { status: 404 });
