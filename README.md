@@ -2,7 +2,7 @@
 
 A festive, AI-powered web application that automates a family's Christmas gift exchange with an optimized, fair, and mysterious spinning wheel experience.
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Zgoubnight/generated-app-20251120-190201)
 
 ## About The Project
 
@@ -91,7 +91,7 @@ Deploying the application to Cloudflare is a straightforward process.
 2.  **Deploy with the button:**
     Alternatively, you can deploy this project to Cloudflare Workers with a single click.
 
-    [cloudflarebutton]
+    [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Zgoubnight/generated-app-20251120-190201)
 
 ## License
 
