@@ -14,7 +14,7 @@ export class ChatAgent extends Agent<Env, ChatState> {
   private chatHandler?: ChatHandler;
   env: Env;
   constructor(state: DurableObjectState, env: Env, ctx: ExecutionContext) {
-    super({ state, env, ctx }, {
+    super(state, {
       messages: [],
       sessionId: crypto.randomUUID(),
       isProcessing: false,
