@@ -10,7 +10,6 @@ export interface SpugnaState {
   timestamp: number | null;
 }
 export class AppController implements DurableObject {
-  [__DURABLE_OBJECT_BRAND]: never;
   state: DurableObjectState;
   env: Env;
   private sessions = new Map<string, SessionInfo>();

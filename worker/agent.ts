@@ -11,8 +11,6 @@ import type { DurableObjectState, ExecutionContext } from '@cloudflare/workers-t
  * This class extends the Agents SDK Agent class and handles all chat operations.
  */
 export class ChatAgent extends Agent<Env, ChatState> {
-  // This is a private brand to ensure the class is only instantiated by the runtime
-  private [__DURABLE_OBJECT_BRAND]?: never;
   private chatHandler?: ChatHandler;
   // Initial state for new chat sessions
   initialState: ChatState = {
