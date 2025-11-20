@@ -6,6 +6,7 @@ import { API_RESPONSES } from './config';
 import { Env, getAppController, registerSession, unregisterSession } from "./core-utils";
 import { MEMBERS } from "./spugna";
 import { ChatHandler } from "./chat";
+import { Request } from '@cloudflare/workers-types';
 /**
  * DO NOT MODIFY THIS FUNCTION. Only for your reference.
  */
@@ -35,6 +36,9 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     // --- La Roue SPUGNA API Routes ---
     app.post('/api/spugna/generate-ideas', async (c) => {
         try {
+            if (!c.env.CF_AI_API_KEY || c.env.CF_AI_API_KEY.includes('your') || !c.env.CF_AI_BASE_URL || c.env.CF_AI_BASE_URL.includes('YOUR')) {
+                return c.json({ success: false, error: 'AI features are not configured by the administrator.' }, { status: 503 });
+            }
             const { recipients } = await c.req.json<{ recipients: string[] }>();
             if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
                 return c.json({ success: false, error: 'Recipients are required' }, { status: 400 });

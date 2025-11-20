@@ -1,12 +1,12 @@
 import type { AppController } from './app-controller';
-import type { DurableObjectNamespace, Request } from '@cloudflare/workers-types';
+import { DurableObjectNamespace, Request } from '@cloudflare/workers-types';
 export interface Env {
   CF_AI_BASE_URL: string;
   CF_AI_API_KEY: string;
   SERPAPI_KEY: string;
   OPENROUTER_API_KEY: string;
   CHAT_AGENT: DurableObjectNamespace;
-  APP_CONTROLLER: DurableObjectNamespace;
+  APP_CONTROLLER: DurableObjectNamespace<AppController>;
 }
 export function getAppController(env: Env): AppController {
   const id = env.APP_CONTROLLER.idFromName("controller");
@@ -32,7 +32,7 @@ export function getAppController(env: Env): AppController {
         if (mapping) {
           return async (...args: any[]) => {
             try {
-              const body = mapping.body ? JSON.stringify(mapping.body(args)) : undefined;
+              const body = mapping.body && args.length > 0 ? JSON.stringify(mapping.body(args)) : undefined;
               const request = new Request(`https://do-proxy${mapping.path}`, {
                 method: mapping.method,
                 headers: { 'Content-Type': 'application/json' },
@@ -50,7 +50,8 @@ export function getAppController(env: Env): AppController {
               if (prop === 'getSpugnaState') {
                 return { optimalDraw: null, playersWhoPlayed: {}, isInitialDrawDone: false, timestamp: null };
               }
-              return null; // Return null for other failed operations to prevent crashes
+              // Rethrow to allow route-level catch handlers to respond
+              throw error;
             }
           };
         }

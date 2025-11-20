@@ -4,7 +4,8 @@ import type { ChatState } from './types';
 import { ChatHandler } from './chat';
 import { API_RESPONSES } from './config';
 import { createMessage, createStreamResponse, createEncoder } from './utils';
-import type { DurableObjectState, ExecutionContext, Request, Response } from '@cloudflare/workers-types';
+import type { DurableObjectState, ExecutionContext } from '@cloudflare/workers-types';
+import { Request, Response } from '@cloudflare/workers-types';
 /**
  * ChatAgent - Main agent class using Cloudflare Agents SDK
  *
@@ -47,6 +48,7 @@ export class ChatAgent extends Agent<Env, ChatState> {
     try {
       const url = new URL(request.url);
       const method = request.method;
+      const headers = { 'Content-Type': 'application/json' };
       // Route to appropriate handler
       if (method === 'GET' && url.pathname === '/messages') {
         return this.handleGetMessages();
@@ -60,41 +62,42 @@ export class ChatAgent extends Agent<Env, ChatState> {
       if (method === 'POST' && url.pathname === '/model') {
         return this.handleModelUpdate(await request.json());
       }
-      return Response.json({
+      return new Response(JSON.stringify({
         success: false,
         error: API_RESPONSES.NOT_FOUND
-      }, { status: 404 });
+      }), { status: 404, headers });
     } catch (error) {
       console.error('Request handling error:', error);
-      return Response.json({
+      return new Response(JSON.stringify({
         success: false,
         error: API_RESPONSES.INTERNAL_ERROR
-      }, { status: 500 });
+      }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
   }
   /**
    * Get current conversation messages
    */
   private handleGetMessages(): Response {
-    return Response.json({
+    return new Response(JSON.stringify({
       success: true,
       data: this.state
-    });
+    }), { headers: { 'Content-Type': 'application/json' } });
   }
   /**
    * Process new chat message
    */
   private async handleChatMessage(body: { message: string; model?: string; stream?: boolean }): Promise<Response> {
+    const headers = { 'Content-Type': 'application/json' };
     if (!this.chatHandler) {
-      return Response.json({ success: false, error: 'AI features are not available due to missing configuration.' }, { status: 503 });
+      return new Response(JSON.stringify({ success: false, error: 'AI features are not available due to missing configuration.' }), { status: 503, headers });
     }
     const { message, model, stream } = body;
     // Validate input
     if (!message?.trim()) {
-      return Response.json({
+      return new Response(JSON.stringify({
         success: false,
         error: API_RESPONSES.MISSING_MESSAGE
-      }, { status: 400 });
+      }), { status: 400, headers });
     }
     // Update model if provided
     if (model && model !== this.state.model) {
@@ -177,17 +180,17 @@ export class ChatAgent extends Agent<Env, ChatState> {
         messages: [...this.state.messages, assistantMessage],
         isProcessing: false
       });
-      return Response.json({
+      return new Response(JSON.stringify({
         success: true,
         data: this.state
-      });
+      }), { headers });
     } catch (error) {
       console.error('Chat processing error:', error);
       this.setState({ ...this.state, isProcessing: false });
-      return Response.json({
+      return new Response(JSON.stringify({
         success: false,
         error: API_RESPONSES.PROCESSING_ERROR
-      }, { status: 500 });
+      }), { status: 500, headers });
     }
   }
   /**
@@ -198,10 +201,10 @@ export class ChatAgent extends Agent<Env, ChatState> {
       ...this.state,
       messages: []
     });
-    return Response.json({
+    return new Response(JSON.stringify({
       success: true,
       data: this.state
-    });
+    }), { headers: { 'Content-Type': 'application/json' } });
   }
   /**
    * Update selected AI model
@@ -210,9 +213,9 @@ export class ChatAgent extends Agent<Env, ChatState> {
     const { model } = body;
     this.setState({ ...this.state, model });
     this.chatHandler?.updateModel(model);
-    return Response.json({
+    return new Response(JSON.stringify({
       success: true,
       data: this.state
-    });
+    }), { headers: { 'Content-Type': 'application/json' } });
   }
 }
