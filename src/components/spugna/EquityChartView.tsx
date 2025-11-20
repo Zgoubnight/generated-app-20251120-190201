@@ -23,10 +23,8 @@ ChartJS.register(
   Legend
 );
 export function EquityChartView() {
-  const { optimalDraw, playersWhoPlayed } = useSpugnaStore(s => ({
-    optimalDraw: s.gameState?.optimalDraw,
-    playersWhoPlayed: s.gameState?.playersWhoPlayed,
-  }));
+  const optimalDraw = useSpugnaStore(s => s.gameState?.optimalDraw);
+  const playersWhoPlayed = useSpugnaStore(s => s.gameState?.playersWhoPlayed);
 
   const chartData = useMemo(() => {
     const recipientCounts: Record<string, number> = {};

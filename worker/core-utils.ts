@@ -38,7 +38,7 @@ export function getAppController(env: Env): AppController {
             headers: { 'Content-Type': 'application/json' },
             body,
           });
-          const response = await stub.fetch(request as unknown as Request);
+          const response = await stub.fetch(request as any);
           return response.json();
         };
       } else {
@@ -50,7 +50,7 @@ export function getAppController(env: Env): AppController {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(args),
           });
-          const response = await stub.fetch(request as unknown as Request);
+          const response = await stub.fetch(request as any);
           return response.json();
         };
       }
